@@ -57,5 +57,6 @@ for (const file of eventFiles) {
 
 console.log(`✅ Loaded ${eventFiles.length} events.`);
 
-// ===== LOGIN =====
+
 client.login(process.env.TOKEN);
+
