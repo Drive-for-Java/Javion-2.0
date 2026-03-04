@@ -1,24 +1,45 @@
 require("dotenv").config();
 const fs = require("fs");
+const path = require("path");
 const { REST, Routes } = require("discord.js");
 
 const commands = [];
-const folders = fs.readdirSync("./commands");
+const commandsPath = path.join(__dirname, "commands");
 
-for (const folder of folders) {
-  const files = fs.readdirSync(`./commands/${folder}`).filter(f => f.endsWith(".js"));
+
+function loadCommands(dir) {
+  const files = fs.readdirSync(dir);
+
   for (const file of files) {
-    const command = require(`./commands/${folder}/${file}`);
-    commands.push(command.data.toJSON());
+    const fullPath = path.join(dir, file);
+
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      loadCommands(fullPath);
+    } else if (file.endsWith(".js")) {
+      const command = require(fullPath);
+      if (command.data) {
+        commands.push(command.data.toJSON());
+      }
+    }
   }
 }
+
+loadCommands(commandsPath);
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 (async () => {
-  await rest.put(
-    Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-    { body: commands }
-  );
-  console.log("✅ Commands Deployed");
+  try {
+    console.log("🔄 Deploying slash commands...");
+
+   
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: commands }
+    );
+
+    console.log(`✅ Successfully deployed ${commands.length} commands.`);
+  } catch (error) {
+    console.error(error);
+  }
 })();
