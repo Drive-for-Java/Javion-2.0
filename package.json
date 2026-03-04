@@ -1,0 +1,14 @@
+{
+  "name": "javion-fun-bot",
+  "version": "2.0.0",
+  "description": "Javion Ultimate Fun & Cheer Bot PRO. This bot aims to promote java.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  }
+}
