@@ -1,5 +1,6 @@
 require("dotenv").config();
 const fs = require("fs");
+const path = require("path");
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
 
 const client = new Client({
@@ -10,22 +11,43 @@ const client = new Client({
   ]
 });
 
+
 client.commands = new Collection();
 
-// Load Commands
-const folders = fs.readdirSync("./commands");
-for (const folder of folders) {
-  const files = fs.readdirSync(`./commands/${folder}`).filter(f => f.endsWith(".js"));
+
+const commandsPath = path.join(__dirname, "commands");
+
+function loadCommands(dir) {
+  const files = fs.readdirSync(dir);
+
   for (const file of files) {
-    const command = require(`./commands/${folder}/${file}`);
-    client.commands.set(command.data.name, command);
+    const fullPath = path.join(dir, file);
+
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      loadCommands(fullPath);
+    } else if (file.endsWith(".js")) {
+      const command = require(fullPath);
+
+      if (command.data && command.execute) {
+        client.commands.set(command.data.name, command);
+      }
+    }
   }
 }
 
-// Load Events
-const eventFiles = fs.readdirSync("./events").filter(f => f.endsWith(".js"));
+loadCommands(commandsPath);
+console.log(`✅ Loaded ${client.commands.size} commands.`);
+
+
+const eventsPath = path.join(__dirname, "events");
+const eventFiles = fs.readdirSync(eventsPath).filter(file =>
+  file.endsWith(".js")
+);
+
 for (const file of eventFiles) {
-  const event = require(`./events/${file}`);
+  const filePath = path.join(eventsPath, file);
+  const event = require(filePath);
+
   if (event.once) {
     client.once(event.name, (...args) => event.execute(...args, client));
   } else {
@@ -33,4 +55,7 @@ for (const file of eventFiles) {
   }
 }
 
+console.log(`✅ Loaded ${eventFiles.length} events.`);
+
+// ===== LOGIN =====
 client.login(process.env.TOKEN);
